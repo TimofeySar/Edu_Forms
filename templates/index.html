@@ -1,0 +1,11 @@
+    {% extends 'base.html' %}
+
+    {% block title %}Главная | EduForms{% endblock %}
+
+    {% block content %}
+    <div class="container my-5 text-center">
+        <h1>Добро пожаловать в EduForms</h1>
+        <p>Создавайте и анализируйте опросы с удобным интерфейсом и аналитикой!</p>
+        <a class="btn btn-success btn-lg {{ 'dark-theme' if theme == 'dark' else '' }}" href="/survey/create_survey">Создать первый опрос</a>
+    </div>
+    {% endblock %}

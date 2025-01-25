@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+{% block title %}Создать новый опрос{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Создание нового опроса</h2>
+
+<form method="POST" action="{{ url_for('survey.create_survey') }}" novalidate>
+    <div class="mb-3">
+        <label for="survey_title" class="form-label">Название опроса</label>
+        <input type="text" class="form-control" id="survey_title" name="survey_title" required>
+    </div>
+    <div class="mb-3">
+        <label for="survey_description" class="form-label">Описание опроса</label>
+        <textarea class="form-control" id="survey_description" name="survey_description" rows="3"></textarea>
+    </div>
+
+    <div id="questions-container">
+        <!-- Блок для первого вопроса -->
+        <div class="question-block mb-4" id="question-block-0">
+            <div class="mb-3">
+                <label for="question_0" class="form-label">Вопрос</label>
+                <input type="text" class="form-control" id="question_0" name="question_0" placeholder="Введите вопрос" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Тип ответа:</label>
+                <select class="form-select" id="answer_type_0" name="answer_type_0" required>
+                    <option value="text" selected>Текстовый ответ</option>
+                    <option value="quiz">Викторина</option>
+                    <option value="text_with_validation">Текстовый ответ с проверкой</option>
+                </select>
+            </div>
+
+            <div class="mb-3" id="text-answer-container_0">
+                <label for="answer_0" class="form-label">Ответ:</label>
+                <input type="text" class="form-control" id="answer_0" name="answer_0" placeholder="Введите текстовый ответ">
+            </div>
+
+            <div class="mb-3" id="quiz-answer-container_0" style="display:none;">
+                <label class="form-label">Варианты ответа:</label>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="quiz_answer_0_1" name="quiz_answer_0_1" placeholder="Введите вариант ответа 1" required>
+                </div>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="quiz_answer_0_2" name="quiz_answer_0_2" placeholder="Введите вариант ответа 2" required>
+                </div>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="quiz_answer_0_3" name="quiz_answer_0_3" placeholder="Введите вариант ответа 3">
+                </div>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="quiz_answer_0_4" name="quiz_answer_0_4" placeholder="Введите вариант ответа 4">
+                </div>
+                <div class="mb-3">
+                    <label for="correct_answer_0" class="form-label">Правильный ответ:</label>
+                    <select class="form-select" id="correct_answer_0" name="correct_answer_0" required>
+                        <option value="1">Вариант 1</option>
+                        <option value="2">Вариант 2</option>
+                        <option value="3">Вариант 3</option>
+                        <option value="4">Вариант 4</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3" id="text-validation-answer-container_0" style="display:none;">
+                <label class="form-label">Правильные ответы:</label>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="text_validation_answer_0_1" name="text_validation_answer_0_1" placeholder="Введите правильный ответ 1" required>
+                </div>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="text_validation_answer_0_2" name="text_validation_answer_0_2" placeholder="Введите правильный ответ 2(если необходимо)">
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-danger remove-question-btn" data-question-id="0">Удалить вопрос</button>
+        </div>
+    </div>
+
+   <div class="d-flex justify-content-between align-items-center mt-3">
+    <!-- Кнопка "Добавить вопрос" -->
+    <button type="button" id="add-question" class="btn btn-secondary">Добавить вопрос</button>
+
+    <!-- Кнопка "Создать опрос" -->
+    <button type="submit" class="btn btn-primary">Создать опрос</button>
+</div>
+</form>
+
+
+<script>
+    let questionCount = 1;
+
+    function updateAnswerType(index) {
+        const answerType = document.getElementById(`answer_type_${index}`).value;
+        const textAnswerContainer = document.getElementById(`text-answer-container_${index}`);
+        const quizAnswerContainer = document.getElementById(`quiz-answer-container_${index}`);
+        const textValidationAnswerContainer = document.getElementById(`text-validation-answer-container_${index}`);
+
+        if (textAnswerContainer && quizAnswerContainer && textValidationAnswerContainer) {
+            if (answerType === "text") {
+                textAnswerContainer.style.display = "block";
+                quizAnswerContainer.style.display = "none";
+                textValidationAnswerContainer.style.display = "none";
+
+                // Убираем атрибут required у скрытых полей
+                quizAnswerContainer.querySelectorAll('input, select').forEach(element => {
+                    element.removeAttribute('required');
+                });
+                textValidationAnswerContainer.querySelectorAll('input').forEach(element => {
+                    element.removeAttribute('required');
+                });
+            } else if (answerType === "quiz") {
+                textAnswerContainer.style.display = "none";
+                quizAnswerContainer.style.display = "block";
+                textValidationAnswerContainer.style.display = "none";
+
+                // Убираем атрибут required у скрытых полей
+                textAnswerContainer.querySelectorAll('input').forEach(element => {
+                    element.removeAttribute('required');
+                });
+                textValidationAnswerContainer.querySelectorAll('input').forEach(element => {
+                    element.removeAttribute('required');
+                });
+            } else if (answerType === "text_with_validation") {
+                textAnswerContainer.style.display = "block";
+                quizAnswerContainer.style.display = "none";
+                textValidationAnswerContainer.style.display = "block";
+
+                // Добавляем атрибут required для видимых полей
+                textValidationAnswerContainer.querySelectorAll('input').forEach(element => {
+                    element.setAttribute('required', 'required');
+                });
+
+                // Убираем атрибут required у скрытых полей
+                quizAnswerContainer.querySelectorAll('input, select').forEach(element => {
+                    element.removeAttribute('required');
+                });
+            }
+        } else {
+            console.error(`Один из контейнеров для вопроса ${index} не найден!`);
+        }
+    }
+
+    // Функция для добавления обработчика изменения типа ответа
+    function addAnswerTypeListener(index) {
+        const selectElement = document.getElementById(`answer_type_${index}`);
+        if (selectElement) {
+            selectElement.addEventListener("change", function() {
+                console.log(`Тип ответа изменен для вопроса ${index}`);  // Отладка
+                updateAnswerType(index);
+            });
+        } else {
+            console.error(`Элемент answer_type_${index} не найден!`);  // Отладка
+        }
+    }
+
+    // Обработчик кнопки удаления вопроса
+    function attachRemoveButtonListener() {
+        const removeButtons = document.querySelectorAll('.remove-question-btn');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                console.log("Кнопка удаления нажата");  // Отладка
+                const questionId = button.dataset.questionId;
+                const questionBlock = document.getElementById(`question-block-${questionId}`);
+                if (questionBlock) {
+                    questionBlock.remove();
+                } else {
+                    console.error(`Блок вопроса ${questionId} не найден!`);  // Отладка
+                }
+            });
+        });
+    }
+
+    // Добавить новый вопрос
+    document.getElementById("add-question").addEventListener("click", function() {
+        const container = document.getElementById("questions-container");
+
+        // Создаем новый блок для вопроса
+        const newQuestionBlock = document.createElement("div");
+        newQuestionBlock.classList.add("question-block", "mb-4");
+        newQuestionBlock.id = `question-block-${questionCount}`;
+
+        // Генерируем ID для нового вопроса
+        const questionIndex = questionCount;
+
+        newQuestionBlock.innerHTML = `
+            <div class="mb-3">
+                <label for="question_${questionIndex}" class="form-label">Вопрос</label>
+                <input type="text" class="form-control" id="question_${questionIndex}" name="question_${questionIndex}" placeholder="Введите вопрос" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Тип ответа:</label>
+                <select class="form-select" id="answer_type_${questionIndex}" name="answer_type_${questionIndex}" required>
+                    <option value="text" selected>Текстовый ответ</option>
+                    <option value="quiz">Викторина</option>
+                    <option value="text_with_validation">Текстовый ответ с проверкой</option>
+                </select>
+            </div>
+
+            <div class="mb-3" id="text-answer-container_${questionIndex}">
+                <label for="answer_${questionIndex}" class="form-label">Ответ:</label>
+                <input type="text" class="form-control" id="answer_${questionIndex}" name="answer_${questionIndex}" placeholder="Введите текстовый ответ">
+            </div>
+
+            <div class="mb-3" id="quiz-answer-container_${questionIndex}" style="display:none;">
+                <label class="form-label">Варианты ответа:</label>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="quiz_answer_${questionIndex}_1" name="quiz_answer_${questionIndex}_1" placeholder="Введите вариант ответа 1" required>
+                </div>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="quiz_answer_${questionIndex}_2" name="quiz_answer_${questionIndex}_2" placeholder="Введите вариант ответа 2" required>
+                </div>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="quiz_answer_${questionIndex}_3" name="quiz_answer_${questionIndex}_3" placeholder="Введите вариант ответа 3">
+                </div>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="quiz_answer_${questionIndex}_4" name="quiz_answer_${questionIndex}_4" placeholder="Введите вариант ответа 4">
+                </div>
+                <div class="mb-3">
+                    <label for="correct_answer_${questionIndex}" class="form-label">Правильный ответ:</label>
+                    <select class="form-select" id="correct_answer_${questionIndex}" name="correct_answer_${questionIndex}" required>
+                        <option value="1">Вариант 1</option>
+                        <option value="2">Вариант 2</option>
+                        <option value="3">Вариант 3</option>
+                        <option value="4">Вариант 4</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3" id="text-validation-answer-container_${questionIndex}" style="display:none;">
+                <label class="form-label">Правильные ответы:</label>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="text_validation_answer_${questionIndex}_1" name="text_validation_answer_${questionIndex}_1" placeholder="Введите правильный ответ 1" required>
+                </div>
+                <div class="mb-2">
+                    <input type="text" class="form-control" id="text_validation_answer_${questionIndex}_2" name="text_validation_answer_${questionIndex}_2" placeholder="Введите правильный ответ 2(если необходимо)">
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-danger remove-question-btn" data-question-id="${questionIndex}">Удалить вопрос</button>
+        `;
+
+        container.appendChild(newQuestionBlock);
+        questionCount++;  // Увеличиваем счетчик вопросов
+
+        // Добавляем обработчик для нового вопроса
+        addAnswerTypeListener(questionIndex);
+        attachRemoveButtonListener();
+    });
+
+    // Инициализация обработчиков для существующих вопросов
+    document.querySelectorAll('[name^="answer_type_"]').forEach((element, index) => {
+        addAnswerTypeListener(index);
+    });
+
+    // Инициализация обработчика удаления для существующих вопросов
+    attachRemoveButtonListener();
+
+    // Отладка отправки формы
+    document.querySelector('form').addEventListener('submit', function(event) {
+        console.log("Форма отправлена");  // Проверка, срабатывает ли отправка формы
+    });
+</script>
+
+{% endblock %}
