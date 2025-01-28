@@ -227,6 +227,35 @@
     document.querySelector('form').addEventListener('submit', function(event) {
         console.log("Форма отправлена");  // Проверка, срабатывает ли отправка формы
     });
+    <!--document.querySelectorAll('[name^="answer_type_"]').forEach((element, index) => {
+        addAnswerTypeListener(index);
+    });
+
+    attachRemoveButtonListener();
+
+    // Код из гайда для сохранения данных в localStorage
+    if (window.localStorage) {
+        const elements = document.querySelectorAll('[name]');
+
+        elements.forEach(element => {
+            const name = element.getAttribute('name');
+            element.value = localStorage.getItem(name) || '';
+
+            element.addEventListener('input', function() {
+                localStorage.setItem(name, element.value);
+            });
+        });
+    }
+
+    // Очистка localStorage при отправке формы
+    document.querySelector('form').addEventListener('submit', function() {
+        if (window.localStorage) {
+            const elements = document.querySelectorAll('[name]');
+            elements.forEach(element => {
+                localStorage.removeItem(element.getAttribute('name'));
+            });
+        }
+    });-->
 </script>
 
 {% endblock %}

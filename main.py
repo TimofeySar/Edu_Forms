@@ -62,12 +62,12 @@ def inject_theme():
     theme = session.get('theme', 'light')
     return {'theme': theme}
 
-
 @app.route('/toggle_theme', methods=['POST'])
 def toggle_theme():
-    current_theme = session.get('theme', 'light')
-    session['theme'] = 'dark' if current_theme == 'light' else 'light'
-    return redirect(request.referrer or url_for('index'))
+    data = request.get_json()
+    new_theme = data.get('theme', 'light')
+    session['theme'] = new_theme
+    return '', 204
 
 
 @app.route('/')
