@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Результаты опроса: {{ survey_name }}
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5 survey-container {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}">
+        <h2 class="mb-4 text-center">Результаты опроса: {{ survey_name }}</h2>
+
+        {% if has_test_questions %}
+            {% if all_correct %}
+                <div class="alert alert-success text-center" role="alert">
+                    Поздравляем! Все ответы правильные!
+                </div>
+            {% else %}
+                <div class="alert alert-warning text-center" role="alert">
+                    Вы допустили ошибки. Вот ваши результаты:
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-info text-center" role="alert">
+                Спасибо за участие! Вот ваши ответы:
+            </div>
+        {% endif %}
+
+        {% for result in results %}
+            <div class="card mb-4 shadow-sm question-card {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}" style="background-color: {{ '#333' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }};">
+                <div class="card-body">
+                    <h5 class="card-title">{{ result.text }}</h5>
+                    <p class="card-text">
+                        Ваш ответ: <strong>{{ result.answer_text }}</strong>
+                    </p>
+                    {% if result.is_correct is not none %}
+                        {% if result.is_correct %}
+                            <p class="text-success">Правильно!</p>
+                        {% else %}
+                            <p class="text-danger">
+                                Неправильно! Правильный ответ:
+                                <strong>
+                                    {% if result.type == 'quiz' %}
+                                        {{ result.correct_answer }}
+                                    {% else %}
+                                        {{ result.correct_answer|join(', ') }}
+                                    {% endif %}
+                                </strong>
+                            </p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted">Этот вопрос не проверяется на правильность.</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="text-center">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Вернуться на главную</a>
+        </div>
+    </div>
+{% endblock %}

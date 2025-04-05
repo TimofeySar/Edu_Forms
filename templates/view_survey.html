@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ survey_name }} | EduForms
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1>{{ survey_name }}</h1>
+    {% if survey_description %}
+    <p class="lead">{{ survey_description }}</p>
+    {% endif %}
+
+    <!-- Ссылка на опрос -->
+    <div class="mb-4">
+        <h4>Ссылка на опрос</h4>
+        <div class="input-group">
+            <input type="text" class="form-control" id="surveyLink" value="{{ survey_link }}" readonly>
+            <button class="btn btn-outline-secondary" type="button" onclick="copyLink()">Копировать</button>
+        </div>
+    </div>
+
+    <!-- Вопросы -->
+    <h2 class="mt-4">Вопросы</h2>
+    {% if questions %}
+    <div class="list-group">
+        {% for question in questions %}
+        <div class="list-group-item {{ 'list-group-item-dark' if theme == 'dark' else '' }} mb-3">
+            <h5>{{ loop.index }}. {{ question['text'] }}</h5>
+            <p><strong>Тип вопроса:</strong>
+                {% if question['type'] == 'text' %}
+                    Текстовый ответ
+                {% elif question['type'] == 'quiz' %}
+                    Викторина (с правильным ответом)
+                {% elif question['type'] == 'quiz_no_correct' %}
+                    Викторина (без правильного ответа)
+                {% elif question['type'] == 'text_with_validation' %}
+                    Текстовый ответ с проверкой
+                {% endif %}
+            </p>
+
+            <!-- Отображаем метаданные в зависимости от типа вопроса -->
+            {% if question['type'] in ['quiz', 'quiz_no_correct'] and question['metadata']['options'] %}
+            <p><strong>Варианты ответа:</strong></p>
+            <ul>
+                {% for option in question['metadata']['options'] %}
+                <li>{{ option }}</li>
+                {% endfor %}
+            </ul>
+            {% if question['type'] == 'quiz' and question['metadata']['correct_answer'] %}
+            <p><strong>Правильный ответ:</strong> {{ question['metadata']['options'][question['metadata']['correct_answer'] - 1] }}</p>
+            {% endif %}
+            {% endif %}
+
+            {% if question['type'] == 'text_with_validation' and question['metadata']['correct_answers'] %}
+            <p><strong>Правильные ответы:</strong></p>
+            <ul>
+                {% for answer in question['metadata']['correct_answers'] %}
+                <li>{{ answer }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>В этом опросе пока нет вопросов.</p>
+    {% endif %}
+
+    <!-- Блок для аналитики -->
+    <div class="mt-5">
+        <h2>Аналитика</h2>
+        <div class="card {{ 'bg-dark text-white' if theme == 'dark' else '' }}">
+            <div class="card-body">
+                <p>Здесь будет отображаться аналитика по опросу (пока в разработке).</p>
+            </div>
+        </div>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Вернуться на главную</a>
+</div>
+
+<script>
+    function copyLink() {
+        const linkInput = document.getElementById('surveyLink');
+        linkInput.select();
+        document.execCommand('copy');
+        alert('Ссылка скопирована в буфер обмена!');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ survey_name }}
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5 survey-container {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}">
+        <h2 class="mb-4 text-center">{{ survey_name }}</h2>
+        {% if survey_description %}
+            <p class="lead text-center mb-5">{{ survey_description }}</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('survey.take_survey', survey_id=survey_id) }}">
+            <!-- Скрытое поле для времени начала -->
+            <input type="hidden" name="start_time" id="start_time" value="">
+
+            {% for question in questions %}
+                <div class="card mb-4 shadow-sm question-card {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}" style="background-color: {{ '#333' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }};">
+                    <div class="card-body">
+                        <h5 class="card-title">Вопрос {{ loop.index }} из {{ questions|length }}: {{ question.text }}</h5>
+
+                        {% if question.type in ['text', 'text_with_validation'] %}
+                            <div class="mb-3">
+                                <input type="text"
+                                       class="form-control input-field {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
+                                       name="answer_{{ question.id }}"
+                                       placeholder="Введите ваш ответ"
+                                       required
+                                       style="background-color: {{ '#444' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }};">
+                            </div>
+                        {% elif question.type in ['quiz', 'quiz_no_correct'] %}
+                            <div class="mb-3">
+                                {% for option in question.metadata.options %}
+                                    {% if option %}
+                                        <div class="form-check">
+                                            <input class="form-check-input custom-radio"
+                                                   type="radio"
+                                                   name="answer_{{ question.id }}"
+                                                   id="option_{{ question.id }}_{{ loop.index0 }}"
+                                                   value="{{ loop.index0 }}"
+                                                   required>
+                                            <label class="form-check-label"
+                                                   for="option_{{ question.id }}_{{ loop.index0 }}"
+                                                   style="color: {{ '#fff' if theme == 'dark' else '#000' }};">
+                                                {{ option }}
+                                            </label>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+
+            <div class="text-center">
+                <button type="submit" class="btn submit-btn" style="
+                    background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+                    border: none;
+                    padding: 12px 24px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #fff;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: transform 0.2s ease-in-out, background 0.3s ease-in-out;
+                " onmouseover="this.style.transform='scale(1.05)'; this.style.background='linear-gradient(45deg, #ff8e53, #ff6b6b)';"
+                   onmouseout="this.style.transform='scale(1)'; this.style.background='linear-gradient(45deg, #ff6b6b, #ff8e53)';">
+                    Отправить ответы
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Устанавливаем время начала при загрузке страницы
+            document.getElementById("start_time").value = new Date().toISOString();
+
+            document.getElementById("themeToggle").addEventListener("click", function() {
+                fetch("/toggle_theme", { method: "POST" })
+                .then(() => location.reload());
+            });
+        });
+    </script>
+{% endblock %}

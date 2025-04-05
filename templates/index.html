@@ -1,11 +1,36 @@
-    {% extends 'base.html' %}
+{% extends 'base.html' %}
 
-    {% block title %}Главная | EduForms{% endblock %}
+{% block title %}Главная | EduForms{% endblock %}
 
-    {% block content %}
-    <div class="container my-5 text-center">
+{% block content %}
+<div class="container my-5">
+    <!-- Приветственный текст и кнопка "Создать первый опрос" отображаются только если нет опросов -->
+    {% if not surveys %}
+    <div class="text-center">
         <h1>Добро пожаловать в EduForms</h1>
         <p>Создавайте и анализируйте опросы с удобным интерфейсом и аналитикой!</p>
         <a class="btn btn-success btn-lg {{ 'dark-theme' if theme == 'dark' else '' }}" href="/survey/create_survey">Создать первый опрос</a>
     </div>
-    {% endblock %}
+    {% endif %}
+
+    <!-- Отображение опросов, если они есть -->
+    {% if surveys %}
+    <div class="mt-5">
+        <h2>Ваши опросы</h2>
+        <div class="row">
+            {% for survey in surveys %}
+            <div class="col-md-4 mb-4">
+                <div class="card {{ 'bg-dark text-white' if theme == 'dark' else '' }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ survey['name'] }}</h5>
+                        <p class="card-text">{{ survey['description'] or 'Описание отсутствует' }}</p>
+                        <a href="{{ url_for('survey.view_survey', survey_id=survey['id']) }}" class="btn btn-primary">Просмотреть</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
