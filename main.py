@@ -12,6 +12,14 @@ app.secret_key = 'sekretniy_kod_shelest_ochen_xoroshy'
 
 app.register_blueprint(survey_bp, url_prefix='/survey')
 
+def ping_self():
+    while True:
+        try:
+            requests.get("https://your-render-app.onrender.com")
+        except Exception as e:
+            print("Ping failed:", e)
+        time.sleep(300)  # Пинг каждые 5 минут
+
 
 def get_db():
     conn = sqlite3.connect('database.db')
