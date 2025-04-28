@@ -118,4 +118,6 @@ def file_exists(filepath):
 app.jinja_env.filters['file_exists'] = file_exists
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    threading.Thread(target=ping_self, daemon=True).start()
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
