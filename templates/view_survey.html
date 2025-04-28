@@ -1,91 +1,120 @@
-{% extends 'base.html' %}
-
-{% block title %}
-    {{ survey_name }} | EduForms
-{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
-<div class="container my-5">
-    <h1>{{ survey_name }}</h1>
-    {% if survey_description %}
-    <p class="lead">{{ survey_description }}</p>
-    {% endif %}
+<div class="container mt-5 survey-container {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}">
+    <h1 class="text-center">Аналитика опроса: {{ survey_name }}</h1>
 
     <!-- Ссылка на опрос -->
     <div class="mb-4">
         <h4>Ссылка на опрос</h4>
         <div class="input-group">
-            <input type="text" class="form-control" id="surveyLink" value="{{ survey_link }}" readonly>
-            <button class="btn btn-outline-secondary" type="button" onclick="copyLink()">Копировать</button>
+            <input type="text"
+                   class="form-control {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
+                   id="surveyLink"
+                   value="{{ survey_link }}"
+                   readonly
+                   style="background-color: {{ '#444' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }};">
+            <button class="btn btn-outline-secondary {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
+                    type="button"
+                    onclick="copyLink()">Копировать</button>
         </div>
     </div>
 
-    <!-- Вопросы -->
-    <h2 class="mt-4">Вопросы</h2>
-    {% if questions %}
-    <div class="list-group">
-        {% for question in questions %}
-        <div class="list-group-item {{ 'list-group-item-dark' if theme == 'dark' else '' }} mb-3">
-            <h5>{{ loop.index }}. {{ question['text'] }}</h5>
-            <p><strong>Тип вопроса:</strong>
-                {% if question['type'] == 'text' %}
-                    Текстовый ответ
-                {% elif question['type'] == 'quiz' %}
-                    Викторина (с правильным ответом)
-                {% elif question['type'] == 'quiz_no_correct' %}
-                    Викторина (без правильного ответа)
-                {% elif question['type'] == 'text_with_validation' %}
-                    Текстовый ответ с проверкой
-                {% endif %}
-            </p>
+    <!-- Общие параметры -->
+    <div class="card mb-4 {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
+         style="background-color: {{ '#333' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }};">
+        <div class="card-header">
+            <h3>Общие параметры</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>Количество участников:</strong> {{ total_participants }}</p>
+        </div>
+    </div>
 
-            <!-- Отображаем метаданные в зависимости от типа вопроса -->
-            {% if question['type'] in ['quiz', 'quiz_no_correct'] and question['metadata']['options'] %}
-            <p><strong>Варианты ответа:</strong></p>
-            <ul>
-                {% for option in question['metadata']['options'] %}
-                <li>{{ option }}</li>
-                {% endfor %}
-            </ul>
-            {% if question['type'] == 'quiz' and question['metadata']['correct_answer'] %}
-            <p><strong>Правильный ответ:</strong> {{ question['metadata']['options'][question['metadata']['correct_answer'] - 1] }}</p>
-            {% endif %}
-            {% endif %}
-
-            {% if question['type'] == 'text_with_validation' and question['metadata']['correct_answers'] %}
-            <p><strong>Правильные ответы:</strong></p>
-            <ul>
-                {% for answer in question['metadata']['correct_answers'] %}
-                <li>{{ answer }}</li>
-                {% endfor %}
-            </ul>
+    <!-- Вопросы и ответы -->
+    {% for question in questions %}
+    <div class="card mb-4 {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
+         style="background-color: {{ '#333' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }};">
+        <div class="card-header">
+            <h3>Вопрос: {{ question.text }}</h3>
+            <p><strong>Тип вопроса:</strong> {{ question.type }}</p>
+            {% if question.correct_answer %}
+                <p><strong>Правильный ответ:</strong> {{ question.correct_answer }}</p>
             {% endif %}
         </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <p>В этом опросе пока нет вопросов.</p>
-    {% endif %}
-
-    <!-- Блок для аналитики -->
-    <div class="mt-5">
-        <h2>Аналитика</h2>
-        <div class="card {{ 'bg-dark text-white' if theme == 'dark' else '' }}">
-            <div class="card-body">
-                <p>Здесь будет отображаться аналитика по опросу (пока в разработке).</p>
+        <div class="card-body">
+            <!-- График для вопросов типа quiz -->
+            {% if question.chart %}
+            <div class="mb-4">
+                <h5>Статистика ответов</h5>
+                <img src="{{ question.chart }}" alt="График ответов" style="max-width: 100%; height: auto;">
             </div>
+            {% endif %}
+
+            <!-- Таблица ответов -->
+            <h4>Ответы</h4>
+            <table class="table table-bordered {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
+                   style="background-color: {{ '#333' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }};">
+                <thead>
+                    <tr>
+                        <th>Респондент</th>
+                        <th>Ответ</th>
+                        {% if question.type == 'quiz' or question.type == 'text_with_validation' %}
+                            <th>Правильность</th>
+                        {% endif %}
+                        <th>Время ответа</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for response in question.responses %}
+                    <tr>
+                        <td>{{ response.respondent }}</td>
+                        <td>{{ response.answer }}</td>
+                        {% if question.type == 'quiz' or question.type == 'text_with_validation' %}
+                            <td>
+                                {% if response.is_correct == 1 %}
+                                    <span class="badge bg-success">Правильно</span>
+                                {% elif response.is_correct == 0 %}
+                                    <span class="badge bg-danger">Неправильно</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                        <td>{{ response.created_at }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not question.responses %}
+                    <tr>
+                        <td colspan="{% if question.type == 'quiz' or question.type == 'text_with_validation' %}4{% else %}3{% endif %}">Ответов пока нет</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
     </div>
+    {% endfor %}
 
-    <a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Вернуться на главную</a>
+    <div class="text-center">
+        <a href="{{ url_for('index') }}"
+           class="btn btn-primary {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
+           style="background: linear-gradient(45deg, #ff6b6b, #ff8e53); border: none; color: #fff;">
+           На главную
+        </a>
+    </div>
 </div>
 
+<!-- JavaScript для копирования ссылки -->
 <script>
-    function copyLink() {
-        const linkInput = document.getElementById('surveyLink');
-        linkInput.select();
-        document.execCommand('copy');
-        alert('Ссылка скопирована в буфер обмена!');
-    }
+function copyLink() {
+    var linkInput = document.getElementById('surveyLink');
+    navigator.clipboard.writeText(linkInput.value)
+        .then(() => {
+            alert('Ссылка скопирована в буфер обмена!');
+        })
+        .catch(err => {
+            alert('Не удалось скопировать ссылку.');
+        });
+}
 </script>
 {% endblock %}

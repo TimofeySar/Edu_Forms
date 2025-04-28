@@ -4,87 +4,12 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 from survey_routes import survey_bp
 from contextlib import closing
+import os
 
 app = Flask(__name__)
-app.secret_key = 'sekretniy_kod_shelest_lochen_xoroshy'
+app.secret_key = 'sekretniy_kod_shelest_ochen_xoroshy'
 
 app.register_blueprint(survey_bp, url_prefix='/survey')
-
-
-def init_db():
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-
-    # Пользователи
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        username TEXT UNIQUE NOT NULL,
-                        email TEXT UNIQUE NOT NULL,
-                        password TEXT NOT NULL
-                    )''')
-
-    # Опросы
-    cursor.execute('''CREATE TABLE IF NOT EXISTS surveys (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT NOT NULL,
-                        description TEXT,
-                        user_id INTEGER NOT NULL,
-                        show_correct_answers BOOLEAN DEFAULT 0
-                    )''')
-
-    # Проверяем, есть ли поле show_correct_answers в таблице surveys
-    cursor.execute("PRAGMA table_info(surveys)")
-    columns = [col[1] for col in cursor.fetchall()]
-    if 'show_correct_answers' not in columns:
-        cursor.execute('ALTER TABLE surveys ADD COLUMN show_correct_answers BOOLEAN DEFAULT 0')
-
-    # Вопросы
-    cursor.execute('''CREATE TABLE IF NOT EXISTS questions (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        survey_id INTEGER NOT NULL,
-                        text TEXT NOT NULL,
-                        type TEXT NOT NULL,
-                        metadata TEXT,
-                        FOREIGN KEY (survey_id) REFERENCES surveys(id)
-                    )''')
-
-    # Ответы пользователей
-    cursor.execute('''CREATE TABLE IF NOT EXISTS user_answers (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        survey_id INTEGER NOT NULL,
-                        user_id INTEGER NOT NULL,
-                        question_id INTEGER NOT NULL,
-                        answer TEXT NOT NULL,
-                        is_correct BOOLEAN,
-                        question_type TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        ip_address TEXT,
-                        user_agent TEXT,
-                        time_taken INTEGER,
-                        FOREIGN KEY (survey_id) REFERENCES surveys(id),
-                        FOREIGN KEY (question_id) REFERENCES questions(id)
-                    )''')
-
-    # Проверяем, есть ли новые поля в таблице user_answers
-    cursor.execute("PRAGMA table_info(user_answers)")
-    columns = [col[1] for col in cursor.fetchall()]
-
-    if 'ip_address' not in columns:
-        cursor.execute('ALTER TABLE user_answers ADD COLUMN ip_address TEXT')
-    if 'user_agent' not in columns:
-        cursor.execute('ALTER TABLE user_answers ADD COLUMN user_agent TEXT')
-    if 'time_taken' not in columns:
-        cursor.execute('ALTER TABLE user_answers ADD COLUMN time_taken INTEGER')
-    if 'created_at' not in columns:
-        cursor.execute('ALTER TABLE user_answers ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
-    if 'question_type' not in columns:
-        cursor.execute('ALTER TABLE user_answers ADD COLUMN question_type TEXT')
-
-    conn.commit()
-    conn.close()
-
-
-init_db()
 
 
 def get_db():
@@ -111,7 +36,7 @@ def index():
     user_id = session.get('user_id')
     surveys = []
 
-    if user_id:  # Если пользователь авторизован
+    if user_id:
         try:
             with closing(get_db()) as conn:
                 cursor = conn.cursor()
@@ -121,11 +46,10 @@ def index():
             print(f"Ошибка базы данных: {e}")
             flash('Произошла ошибка при загрузке опросов.', 'danger')
 
-    theme = session.get('theme', 'light')  # Предполагаем, что у тебя есть поддержка тем
+    theme = session.get('theme', 'light')
     return render_template('index.html', theme=theme, surveys=surveys)
 
 
-# Авторизация
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -186,6 +110,12 @@ def logout():
     flash('Вы вышли из системы.', 'info')
     return redirect(url_for('index'))
 
+
+def file_exists(filepath):
+    return os.path.exists(os.path.join('static', 'graphs', filepath))
+
+
+app.jinja_env.filters['file_exists'] = file_exists
 
 if __name__ == '__main__':
     app.run(debug=True)
