@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from survey_routes import survey_bp
 from contextlib import closing
 import os
+import threading
 
 app = Flask(__name__)
 app.secret_key = 'sekretniy_kod_shelest_ochen_xoroshy'
