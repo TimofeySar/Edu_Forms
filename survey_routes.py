@@ -18,17 +18,20 @@ def get_db():
     return sqlite3.connect('database.db')
 
 
-def shorten_url(long_url):
-    #api для создания ссылки
-    api_url = f"https://tinyurl.com/api-create.php?url={long_url}"
-    try:
-        response = requests.get(api_url, timeout=2)
-        response.raise_for_status()
-        return response.text
-    except:
-        return long_url
 
 
+
+
+
+
+@survey_bp.route('/created/<int:survey_id>')
+def survey_created(survey_id):
+    """
+    Displays a confirmation page after a survey has been successfully created.
+    """
+    long_link = url_for('survey.take_survey', survey_id=survey_id, _external=True)
+    survey_link = long_link
+    return render_template('survey_created.html', survey_id=survey_id, survey_link=survey_link)
 
 
 @survey_bp.route('/create_survey', methods=['GET', 'POST'])
@@ -339,8 +342,8 @@ def view_survey(survey_id):
 
         #смсмылка
         long_link = url_for('survey.take_survey', survey_id=survey_id, _external=True)
-        survey_link = shorten_url(long_link)
-        logging.debug(f"Сгенерирована ссылка на опрос: {survey_link}")
+
+        logging.debug(f"Сгенерирована ссылка на опрос: {long_link}")
 
         # Количество участников
         try:
@@ -456,7 +459,7 @@ def view_survey(survey_id):
         'view_survey.html',
         survey_name=survey_name,
         survey_id=survey_id,
-        survey_link=survey_link,
+        survey_link=long_link,
         total_participants=total_participants,
         questions=questions,
         theme=session.get('theme', 'light')

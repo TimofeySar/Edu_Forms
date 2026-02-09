@@ -6,7 +6,8 @@ from survey_routes import survey_bp
 from contextlib import closing
 import os
 import threading
-
+import requests
+import time
 app = Flask(__name__)
 app.secret_key = 'sekretniy_kod_shelest_ochen_xoroshy'
 
@@ -94,7 +95,6 @@ def register():
         password = request.form['password']
 
         hashed_password = generate_password_hash(password)
-        print(hashed_password)
 
         try:
             conn = sqlite3.connect('database.db')
