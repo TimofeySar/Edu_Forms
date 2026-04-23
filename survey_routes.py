@@ -424,37 +424,64 @@ def view_survey(survey_id):
                     'created_at': created_at
                 })
 
-            #  графика для вопросов типа кфиз
-            if question['type'] == 'quiz' and question['metadata'].get('options'):
+             #графика для вопросов типа кфиз
+            if question['type'] in ['quiz', 'quiz_no_correct'] and question['metadata'].get('options'):
                 try:
-                    # Подсчет ответов
-                    stats = {option: 0 for option in question['metadata']['options']}
+
+
+                    options = question['metadata']['options']
+                    stats = {option: 0 for option in options}
+                    total_votes = 0
+
                     for response in question['responses']:
-                        if response['answer'] in stats:
-                            stats[response['answer']] += 1
+                        raw_val = str(response['answer'])
 
-                    # Создание графика
-                    plt.figure(figsize=(8, 4))
-                    plt.bar(stats.keys(), stats.values(), color='#ff6b6b')
-                    plt.title(f'Распределение ответов: {q_text[:30]}...')
-                    plt.xlabel('Варианты ответа')
-                    plt.ylabel('Количество')
-                    plt.xticks(rotation=45, ha='right')
-                    plt.tight_layout()
+                        if raw_val in stats:
+                            stats[raw_val] += 1
+                            total_votes += 1
+                            print(f"    [OK] Текст найден: {raw_val}")
+                        else:
+                            try:
+                                idx = int(raw_val)
+                                if 0 <= idx < len(options):
+                                    answer_text = options[idx]
+                                    stats[answer_text] += 1
+                                    total_votes += 1
 
-                    # Сохранение графика в базе6464
-                    buffer = io.BytesIO()
-                    plt.savefig(buffer, format='png')
-                    buffer.seek(0)
-                    chart_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-                    question['chart'] = f'data:image/png;base64,{chart_base64}'
-                    plt.close()
+                            except (ValueError, TypeError):
+                                pass
+
+                    if total_votes > 0:
+                        # Очистка и создание фигуры
+                        plt.clf()
+                        fig = plt.figure(figsize=(8, 4))
+
+                        x_labels = [str(opt)[:15] + '..' if len(str(opt)) > 15 else str(opt) for opt in
+                                    stats.keys()]
+                        y_values = list(stats.values())
+
+                        plt.bar(x_labels, y_values, color='#ff6b6b')
+                        plt.title(f'Статистика: {q_text[:40]}')
+                        plt.ylabel('Количество ответов')
+
+                        plt.xticks(rotation=30, ha='right')
+                        plt.tight_layout()
+
+                        buffer = io.BytesIO()
+                        plt.savefig(buffer, format='png', dpi=100)
+                        buffer.seek(0)
+                        chart_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+                        question['chart'] = f'data:image/png;base64,{chart_base64}'
+
+                        plt.close(fig)
+
+
                 except Exception as e:
-                    logging.error(f"Ошибка генерации графика для вопроса {q_id}: {e}")
+                    print(f"    [CRITICAL] Ошибка в Matplotlib: {e}")
                     question['chart'] = None
 
             questions.append(question)
-
     return render_template(
         'view_survey.html',
         survey_name=survey_name,

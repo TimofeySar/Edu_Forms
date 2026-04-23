@@ -19,7 +19,7 @@ def ping_self():
             requests.get("https://your-render-app.onrender.com")
         except Exception as e:
             print("Ping failed:", e)
-        time.sleep(300)  # Пинг каждые 5 минут
+        time.sleep(300)
 
 
 def get_db():

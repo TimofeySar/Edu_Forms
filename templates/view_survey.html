@@ -31,70 +31,80 @@
         </div>
     </div>
 
-    <!-- Вопросы и ответы -->
+
     {% for question in questions %}
     <div class="card mb-4 {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
-         style="background-color: {{ '#333' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }};">
+         style="background-color: {{ '#333' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }}; border: 1px solid #555;">
+
         <div class="card-header">
             <h3>Вопрос: {{ question.text }}</h3>
-            <p><strong>Тип вопроса:</strong> {{ question.type }}</p>
+            <p class="mb-1"><strong>Тип:</strong>
+                {% if question.type == 'quiz' %} Викторина
+                {% elif question.type == 'quiz_no_correct' %} Опрос
+                {% elif question.type == 'text_with_validation' %} Тест с проверкой
+                {% else %} Текстовый ответ {% endif %}
+            </p>
             {% if question.correct_answer %}
-                <p><strong>Правильный ответ:</strong> {{ question.correct_answer }}</p>
+                <p class="text-success"><strong>Правильный ответ:</strong> {{ question.correct_answer }}</p>
             {% endif %}
         </div>
+
         <div class="card-body">
-            <!-- График для вопросов типа quiz -->
             {% if question.chart %}
-            <div class="mb-4">
-                <h5>Статистика ответов</h5>
-                <img src="{{ question.chart }}" alt="График ответов" style="max-width: 100%; height: auto;">
+            <div class="mb-4 text-center">
+                <h5 class="text-start">Статистика ответов:</h5>
+                <img src="{{ question.chart }}" alt="График ответов" class="img-fluid rounded shadow-sm" style="max-height: 400px; border: 1px solid #ddd;">
             </div>
+            <hr>
             {% endif %}
 
-            <!-- Таблица ответов -->
-            <h4>Ответы</h4>
-            <table class="table table-bordered {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
-                   style="background-color: {{ '#333' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }};">
-                <thead>
-                    <tr>
-                        <th>Респондент</th>
-                        <th>Ответ</th>
-                        {% if question.type == 'quiz' or question.type == 'text_with_validation' %}
-                            <th>Правильность</th>
+            <h4>Детализация ответов</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
+                       style="background-color: {{ '#333' if theme == 'dark' else '#fff' }}; color: {{ '#fff' if theme == 'dark' else '#000' }};">
+                    <thead>
+                        <tr>
+                            <th>Респондент</th>
+                            <th>Ответ</th>
+                            {% if question.type in ['quiz', 'text_with_validation'] %}
+                                <th>Статус</th>
+                            {% endif %}
+                            <th>Дата/Время</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for response in question.responses %}
+                        <tr>
+                            <td>{{ response.respondent }}</td>
+                            <td>{{ response.answer }}</td>
+
+                            {% if question.type in ['quiz', 'text_with_validation'] %}
+                                <td>
+                                    {% if response.is_correct == 1 %}
+                                        <span class="badge bg-success">Верно</span>
+                                    {% elif response.is_correct == 0 %}
+                                        <span class="badge bg-danger">Ошибка</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">-</span>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+
+                            <td>{{ response.created_at }}</td>
+                        </tr>
+                        {% endfor %}
+
+                        {% if not question.responses %}
+                        <tr>
+                            <td colspan="5" class="text-center">Данных пока нет</td>
+                        </tr>
                         {% endif %}
-                        <th>Время ответа</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for response in question.responses %}
-                    <tr>
-                        <td>{{ response.respondent }}</td>
-                        <td>{{ response.answer }}</td>
-                        {% if question.type == 'quiz' or question.type == 'text_with_validation' %}
-                            <td>
-                                {% if response.is_correct == 1 %}
-                                    <span class="badge bg-success">Правильно</span>
-                                {% elif response.is_correct == 0 %}
-                                    <span class="badge bg-danger">Неправильно</span>
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                        {% endif %}
-                        <td>{{ response.created_at }}</td>
-                    </tr>
-                    {% endfor %}
-                    {% if not question.responses %}
-                    <tr>
-                        <td colspan="{% if question.type == 'quiz' or question.type == 'text_with_validation' %}4{% else %}3{% endif %}">Ответов пока нет</td>
-                    </tr>
-                    {% endif %}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     {% endfor %}
-
     <div class="text-center">
         <a href="{{ url_for('index') }}"
            class="btn btn-primary {{ 'dark-theme' if theme == 'dark' else 'light-theme' }}"
