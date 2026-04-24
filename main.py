@@ -4,9 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from survey_routes import survey_bp
 from contextlib import closing
 import os
-import threading
-import requests
-import time
+
 app = Flask(__name__)
 app.secret_key = 'sekretniy_kod_shelest_ochen_xoroshy'
 
@@ -119,6 +117,5 @@ def file_exists(filepath):
 app.jinja_env.filters['file_exists'] = file_exists
 
 if __name__ == '__main__':
-    threading.Thread(target=ping_self, daemon=True).start()
     port = int(os.environ.get('PORT', 80))
     app.run(host='0.0.0.0', port=port)
